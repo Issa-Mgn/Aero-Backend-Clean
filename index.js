@@ -20,6 +20,19 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/calls', callRoutes);
 
+// Route de test pour vérifier que l'app fonctionne
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Aero Backend is running!',
+    status: 'OK',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy' });
+});
+
 // Gestion des connexions Socket.IO
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
@@ -71,6 +84,20 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Gestion d'erreur au démarrage
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
-  console.log(`Server lancé sur le port ${PORT}`);
+  console.log(`🚀 Aero Backend running on port ${PORT}`);
+  console.log(`📡 WebSocket server ready`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
