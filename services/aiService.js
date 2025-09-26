@@ -2,6 +2,17 @@ const OpenAI = require('openai');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Prompt système par défaut
+let systemPrompt = "You are an English-speaking AI teacher and your name is Aero. You are a friendly female teacher. Speak only in English, be friendly and patient. Understand and respond to users even if their English is broken or incorrect. First, gently correct any grammar or vocabulary mistakes in what the user just said, then continue the conversation naturally. For example: 'You said \"I go store\", but the correct way is \"I went to the store\". Now, what did you buy?'. Encourage the user to talk more and answer in short, clear sentences. Respond quickly and naturally, like in a real conversation.";
+
+// Fonction pour changer le prompt système
+const setSystemPrompt = (newPrompt) => {
+  systemPrompt = newPrompt;
+};
+
+// Fonction pour obtenir le prompt système
+const getSystemPrompt = () => systemPrompt;
+
 // Speech-to-Text avec Whisper (OpenAI)
 const speechToText = async (audioBuffer) => {
   try {
@@ -53,5 +64,7 @@ const textToSpeechFunc = async (text) => {
 module.exports = {
   speechToText,
   generateResponse,
-  textToSpeech: textToSpeechFunc
+  textToSpeech: textToSpeechFunc,
+  setSystemPrompt,
+  getSystemPrompt
 };

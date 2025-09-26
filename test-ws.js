@@ -11,10 +11,12 @@ socket.on('connect', function() {
   console.log('📤 Envoi de start-call...');
   socket.emit('start-call', { callId: 'test-123' });
 
-  // Après 2 secondes, test audio-data
+  // Après 2 secondes, test audio-data (simulé avec buffer)
   setTimeout(() => {
-    console.log('📤 Envoi de audio-data...');
-    socket.emit('audio-data', 'Hello, how are you today?'); // Texte simulé
+    console.log('📤 Envoi de audio-data simulé...');
+    // Simuler un buffer audio PCM16 (remplacer par vrai audio)
+    const fakeAudioBuffer = Buffer.from('fake audio data');
+    socket.emit('audio-data', fakeAudioBuffer);
   }, 2000);
 
   // Après 5 secondes, test end-call
@@ -28,12 +30,19 @@ socket.on('call-started', function(data) {
   console.log('✅ Call started reçu:', data);
 });
 
-socket.on('ai-response', function(data) {
-  console.log('✅ AI response reçu:', data);
+socket.on('ai-text-delta', function(data) {
+  console.log('✅ AI text delta:', data.delta);
+});
+
+socket.on('ai-audio-delta', function(data) {
+  console.log('✅ AI audio delta reçu (taille:', data.audio.length, ')');
 });
 
 socket.on('call-ended', function(data) {
   console.log('✅ Call ended reçu:', data);
+  if (data.transcription) {
+    console.log('📝 Transcription complète:', data.transcription);
+  }
 });
 
 socket.on('error', function(err) {

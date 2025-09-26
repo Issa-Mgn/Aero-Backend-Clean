@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Aero WebSocket</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px 20px; }
+        #log { margin-top: 20px; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test WebSocket Aero Backend</h1>
+
+    <!-- Timer pour test seulement -->
+    <div id="timer" style="color: #666; font-size: 14px;">Temps restant: --:--</div>
+
+    <button id="startCall">🚀 Démarrer appel</button>
+    <div style="margin: 10px 0;">
+        <input type="text" id="userText" placeholder="Tapez ce que vous voulez dire..." style="width: 300px; padding: 5px;">
+        <button id="sendAudio">🎤 Envoyer message</button>
+    </div>
+    <button id="endCall">⏹️ Terminer appel</button>
+
+    <div id="log"></div>
+
+    <script>
+        const socket = io('http://localhost:3000');
+        const log = document.getElementById('log');
+        const timerDisplay = document.getElementById('timer');
+        let callStartTime = null;
+        let timerInterval = null;
+
+        function addLog(msg, type = 'info') {
+            const p = document.createElement('p');
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            p.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateTimer() {
+            if (callStartTime) {
+                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+                const remaining = 180 - elapsed; // 3min pour test
+                if (remaining >= 0) {
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    timerDisplay.textContent = `Temps restant: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    timerDisplay.textContent = 'Temps écoulé';
+                }
+            }
+        }
+
+        // Événements de connexion
+        socket.on('connect', () => addLog('✅ Connecté au serveur WebSocket', 'success'));
+        socket.on('disconnect', () => addLog('❌ Déconnecté du serveur', 'error'));
+
+        // Événements de l'appel
+        socket.on('call-started', (data) => {
+            addLog('📞 Appel démarré: ' + JSON.stringify(data), 'success');
+            callStartTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+        });
+        socket.on('ai-text-delta', (data) => addLog('💬 Texte IA: ' + data.delta));
+        socket.on('ai-audio-delta', (data) => addLog('🔊 Audio IA reçu (' + data.audio.length + ' bytes)'));
+        socket.on('call-ended', (data) => {
+            addLog('🏁 Appel terminé: ' + JSON.stringify(data), 'success');
+            if (timerInterval) clearInterval(timerInterval);
+            timerDisplay.textContent = 'Temps restant: --:--';
+            callStartTime = null;
+            if (data.transcription) {
+                addLog('📝 Transcription complète:', 'success');
+                data.transcription.forEach(item => {
+                    addLog(`  ${item.role}: ${item.text}`);
+                });
+            }
+        });
+        socket.on('error', (err) => addLog('❌ Erreur: ' + JSON.stringify(err), 'error'));
+
+        // Boutons
+        document.getElementById('startCall').onclick = () => {
+            const callId = 'test-' + Date.now();
+            socket.emit('start-call', { callId });
+            addLog('📤 Envoi start-call avec ID: ' + callId);
+        };
+
+        function sendUserMessage() {
+            const userInput = document.getElementById('userText').value.trim();
+            if (!userInput) {
+                alert('Veuillez entrer un message');
+                return;
+            }
+
+            // Simule un buffer audio PCM16 (24kHz, mono)
+            // En réalité, ceci viendrait du microphone
+            const fakeAudio = new Uint8Array(1024);
+            for (let i = 0; i < fakeAudio.length; i++) {
+                fakeAudio[i] = Math.random() * 255;
+            }
+
+            // Envoyer le texte personnalisé avec l'audio
+            socket.emit('audio-data', { audio: fakeAudio.buffer, text: userInput });
+            addLog('📤 Envoi message: "' + userInput + '"');
+            document.getElementById('userText').value = ''; // Vider le champ
+        }
+
+        document.getElementById('sendAudio').onclick = sendUserMessage;
+
+        // Support pour la touche Entrée
+        document.getElementById('userText').onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                sendUserMessage();
+            }
+        };
+
+        document.getElementById('endCall').onclick = () => {
+            socket.emit('end-call', { callId: 'test' });
+            addLog('📤 Envoi end-call');
+        };
+    </script>
+</body>
+</html>

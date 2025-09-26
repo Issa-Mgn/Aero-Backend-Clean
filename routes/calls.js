@@ -11,4 +11,7 @@ router.post('/end/:callId', callController.endCall);
 // Récupérer l'historique des conversations
 router.get('/history/:userId', callController.getHistory);
 
+// Changer le prompt système
+router.post('/language', callController.setLanguage);
+
 module.exports = router;

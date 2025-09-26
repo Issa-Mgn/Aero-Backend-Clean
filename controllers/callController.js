@@ -1,4 +1,5 @@
 const Call = require('../models/Call');
+const aiService = require('../services/aiService');
 
 // Liste des appels actifs (en mémoire pour simplicité)
 let activeCalls = {};
@@ -38,8 +39,18 @@ const getHistory = (req, res) => {
   res.status(200).json(userHistory);
 };
 
+const setLanguage = (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ message: 'Prompt is required' });
+  }
+  aiService.setSystemPrompt(prompt);
+  res.status(200).json({ message: 'System prompt updated' });
+};
+
 module.exports = {
   startCall,
   endCall,
-  getHistory
+  getHistory,
+  setLanguage
 };
