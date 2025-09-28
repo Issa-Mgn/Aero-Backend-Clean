@@ -70,10 +70,9 @@ io.on('connection', (socket) => {
 
       console.log('Mock Realtime client "connected" for socket:', socket.id);
 
-      // Timer pour avertissement à 30 secondes avant la fin (pour test: 30s au lieu de 4:45)
-      const warningTime = 2.5 * 60 * 1000; // 2.5 minutes pour test (30s avant la fin)
-      // const warningTime = 4 * 60 * 1000 + 45 * 1000; // 4:45 pour production
-      sessions[socket.id].warningTimer = setTimeout(() => {
+      // Timer pour avertissement à 15 secondes avant la fin
+      const warningTime = 4 * 60 * 1000 + 45 * 1000; // 4:45 pour avertissement
+      sessions[socket.id].warningTimer = setTimeout(async () => {
         if (sessions[socket.id]) {
           // Détecter le sujet (simulation)
           const topic = detectTopic(sessions[socket.id].transcription);
@@ -82,12 +81,13 @@ io.on('connection', (socket) => {
           socket.emit('ai-text-delta', { delta: warningMessage });
           sessions[socket.id].transcription.push({ role: 'assistant', text: warningMessage });
           console.log('Warning message sent:', warningMessage);
+
+          // Audio géré côté client
         }
       }, warningTime);
 
-      // Timer pour fin automatique (pour test: 3min au lieu de 5min)
-      const endTime = 3 * 60 * 1000; // 3 minutes pour test
-      // const endTime = 5 * 60 * 1000; // 5 minutes pour production
+      // Timer pour fin automatique
+      const endTime = 5 * 60 * 1000; // 5 minutes
       sessions[socket.id].endTimer = setTimeout(() => {
         if (sessions[socket.id]) {
           const transcription = sessions[socket.id].transcription;
@@ -101,12 +101,14 @@ io.on('connection', (socket) => {
       socket.emit('call-started', { callId: data.callId });
 
       // Message d'accueil de l'IA
-      setTimeout(() => {
+      setTimeout(async () => {
         if (sessions[socket.id]) {
           const greeting = "Hello I'm Aero your English Teacher and I'm here to help you improve yourself in this language. Tell me how can I help you today? You want to talk about something or a topic?";
           socket.emit('ai-text-delta', { delta: greeting });
           sessions[socket.id].transcription.push({ role: 'assistant', text: greeting });
           console.log('Greeting message sent:', greeting);
+
+          // Audio géré côté client avec ResponsiveVoice (gratuit)
         }
       }, 1000); // Petit délai pour que call-started soit traité
     } catch (error) {
@@ -147,9 +149,7 @@ io.on('connection', (socket) => {
         sessions[socket.id].transcription.push({ role: 'assistant', text: aiText });
         console.log('AI response:', aiText);
 
-        // Simulation d'audio (remplacer par vrai TTS plus tard)
-        const mockAudio = new Uint8Array(2048);
-        socket.emit('ai-audio-delta', { audio: mockAudio });
+        // Audio géré côté client avec ResponsiveVoice (gratuit)
 
       } catch (error) {
         console.error('OpenAI API error:', error);
@@ -172,6 +172,8 @@ io.on('connection', (socket) => {
         socket.emit('ai-text-delta', { delta: fallbackText });
         sessions[socket.id].transcription.push({ role: 'assistant', text: fallbackText });
         console.log('Fallback response:', fallbackText);
+
+        // Audio géré côté client
       }
     }
   });

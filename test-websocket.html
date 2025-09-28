@@ -3,6 +3,7 @@
 <head>
     <title>Test Aero WebSocket</title>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=FD3DD28L"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         button { margin: 10px; padding: 10px 20px; }
@@ -12,8 +13,6 @@
 <body>
     <h1>Test WebSocket Aero Backend</h1>
 
-    <!-- Timer pour test seulement -->
-    <div id="timer" style="color: #666; font-size: 14px;">Temps restant: --:--</div>
 
     <button id="startCall">🚀 Démarrer appel</button>
     <div style="margin: 10px 0;">
@@ -27,9 +26,7 @@
     <script>
         const socket = io('http://localhost:3000');
         const log = document.getElementById('log');
-        const timerDisplay = document.getElementById('timer');
         let callStartTime = null;
-        let timerInterval = null;
 
         function addLog(msg, type = 'info') {
             const p = document.createElement('p');
@@ -39,19 +36,6 @@
             log.scrollTop = log.scrollHeight;
         }
 
-        function updateTimer() {
-            if (callStartTime) {
-                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-                const remaining = 180 - elapsed; // 3min pour test
-                if (remaining >= 0) {
-                    const minutes = Math.floor(remaining / 60);
-                    const seconds = remaining % 60;
-                    timerDisplay.textContent = `Temps restant: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                } else {
-                    timerDisplay.textContent = 'Temps écoulé';
-                }
-            }
-        }
 
         // Événements de connexion
         socket.on('connect', () => addLog('✅ Connecté au serveur WebSocket', 'success'));
@@ -61,15 +45,14 @@
         socket.on('call-started', (data) => {
             addLog('📞 Appel démarré: ' + JSON.stringify(data), 'success');
             callStartTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
-            updateTimer();
         });
-        socket.on('ai-text-delta', (data) => addLog('💬 Texte IA: ' + data.delta));
-        socket.on('ai-audio-delta', (data) => addLog('🔊 Audio IA reçu (' + data.audio.length + ' bytes)'));
+        socket.on('ai-text-delta', (data) => {
+            addLog('💬 Texte IA: ' + data.delta);
+            // Faire parler l'IA
+            responsiveVoice.speak(data.delta, "UK English Female");
+        });
         socket.on('call-ended', (data) => {
             addLog('🏁 Appel terminé: ' + JSON.stringify(data), 'success');
-            if (timerInterval) clearInterval(timerInterval);
-            timerDisplay.textContent = 'Temps restant: --:--';
             callStartTime = null;
             if (data.transcription) {
                 addLog('📝 Transcription complète:', 'success');

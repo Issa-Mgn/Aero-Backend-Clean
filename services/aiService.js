@@ -50,7 +50,7 @@ const textToSpeechFunc = async (text) => {
   try {
     const mp3 = await openai.audio.speech.create({
       model: 'tts-1',
-      voice: 'alloy',
+      voice: 'nova', // Voix féminine pour Aero
       input: text,
     });
     const buffer = Buffer.from(await mp3.arrayBuffer());
